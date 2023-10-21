@@ -34,6 +34,8 @@ import cv2
 import qrcode
 
 def extract_qr_codes_from_pdf(pdf_path):
+    x=2
+    y=2
     pdf_document = fitz.open(pdf_path)
     qr_codes = []
 
@@ -55,12 +57,20 @@ def extract_qr_codes_from_pdf(pdf_path):
 
             # Utilizamos un detector de QR para encontrar el código QR en la imagen
             detector = cv2.QRCodeDetector()
-            scaled_image = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+            scaled_image = cv2.resize(image, None, fx=x, fy=y, interpolation=cv2.INTER_CUBIC)
             
             retval, decoded_info, points, straight_qrcode = detector.detectAndDecodeMulti(scaled_image)
-            print(decoded_info)
-            if retval:
-                qr_codes.extend(decoded_info)
+            print(f" estoy iterando aqui---{decoded_info}")
+            if (decoded_info=='') or (decoded_info==None) or (decoded_info=="()"):
+                print("entro en el if ")
+                x=x+2
+                y=y+2
+                scaled_image = cv2.resize(image, None, fx=x, fy=y, interpolation=cv2.INTER_CUBIC)
+                retval, item, points, straight_qrcode = detector.detectAndDecodeMulti(scaled_image)
+            else:
+                print("entro en el else ")
+                if retval:
+                    qr_codes.extend(decoded_info)
 
     pdf_document.close()
 
@@ -75,7 +85,7 @@ def process_pdf_files_in_folder(folder_path):
         if os.path.isfile(file_path) and file_name.endswith('.pdf'):
             qr_codes = extract_qr_codes_from_pdf(file_path)
         
-            print(len(qr_codes))
+            
             for qr_code in qr_codes:
                 print(f'Código QR encontrado en {file_name}: {qr_code}')
 
