@@ -34,16 +34,17 @@ import cv2
 import qrcode
 
 def extract_qr_codes_from_pdf(pdf_path):
-    x=2
-    y=2
+    
     pdf_document = fitz.open(pdf_path)
     qr_codes = []
 
     for page_number in range(len(pdf_document)):
         page = pdf_document.load_page(page_number)
         image_list = page.get_images(full=True)
-
+      
         for img_index, img in enumerate(image_list):
+            x=2
+            y=2
             xref = img[0]
             base_image = pdf_document.extract_image(xref)
             image_data = base_image["image"]
@@ -60,15 +61,16 @@ def extract_qr_codes_from_pdf(pdf_path):
             scaled_image = cv2.resize(image, None, fx=x, fy=y, interpolation=cv2.INTER_CUBIC)
             
             retval, decoded_info, points, straight_qrcode = detector.detectAndDecodeMulti(scaled_image)
-            print(f" estoy iterando aqui---{decoded_info}")
-            if (decoded_info=='') or (decoded_info==None) or (decoded_info=="()"):
-                print("entro en el if ")
+           
+            if len(decoded_info)==0:
+                
                 x=x+2
                 y=y+2
                 scaled_image = cv2.resize(image, None, fx=x, fy=y, interpolation=cv2.INTER_CUBIC)
                 retval, item, points, straight_qrcode = detector.detectAndDecodeMulti(scaled_image)
             else:
-                print("entro en el else ")
+                x=2
+                y=2
                 if retval:
                     qr_codes.extend(decoded_info)
 
