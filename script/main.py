@@ -1,160 +1,109 @@
 import subprocess
+import time
 comando = "pip install pandas"
 comando1 = "pip install selenium"
-comando2="pip install PyMuPDF qrcode"
-
-
+comando5="pip install PyMuPDF qrcode opencv-python"
 try:
     subprocess.call(comando, shell=True)
     print("installing pandas")
     subprocess.call(comando1, shell=True)
     print("installing selenium")
-    subprocess.call(comando2,shell=True)
-    print("installing PyMuPDF qr code")
+    print("installing  pillow")
+    subprocess.call(comando5,shell=True)
+    print("installing  pdf2image")
+    time.sleep(1)
     print("Dependencies installed correctly.")
 except subprocess.CalledProcessError as e:
     print("Error  installing all dependencies:", e)
     
 import os    
-import time
+
 from random import randint
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import pandas as pd
+import os
 import fitz  # PyMuPDF
 import qrcode
-from io import BytesIO
+import io
+from PIL import Image
 
+import fitz  # PyMuPDF
+import cv2
+import qrcode
 
-def extract_images_from_pdf(pdf_path):
-    images = []
-    doc = fitz.open(pdf_path)
-    for page_num in range(doc.page_count):
-        page = doc.load_page(page_num)
-        image_list = page.get_images(full=True)
-        for img in image_list:
-            xref = img[0]
-            base_image = doc.extract_image(xref)
-            image_data = base_image["image"]
-            images.append(image_data)
-    return images
-
-def find_and_decode_qr_codes(images):
+def extract_qr_codes_from_pdf(pdf_path):
+    pdf_document = fitz.open(pdf_path)
     qr_codes = []
-    for img_data in images:
-        try:
-            qr_code = qrcode.make(img_data)
-            if qr_code.version <= 40:
-                qr_data = qrcode.data.img_scan(qr_code)
-                qr_codes.append(qr_data)
-        except (qrcode.exceptions.DecodeError, AttributeError):
-            pass
+
+    for page_number in range(len(pdf_document)):
+        page = pdf_document.load_page(page_number)
+        image_list = page.get_images(full=True)
+
+        for img_index, img in enumerate(image_list):
+            xref = img[0]
+            base_image = pdf_document.extract_image(xref)
+            image_data = base_image["image"]
+
+            # Guarda la imagen en un archivo temporal
+            with open(f'temp_image_{page_number}_{img_index}.jpg', 'wb') as temp_image:
+                temp_image.write(image_data)
+
+            # Cargamos la imagen con OpenCV para procesarla
+            image = cv2.imread(f'temp_image_{page_number}_{img_index}.jpg')
+
+            # Utilizamos un detector de QR para encontrar el código QR en la imagen
+            detector = cv2.QRCodeDetector()
+            scaled_image = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+            
+            retval, decoded_info, points, straight_qrcode = detector.detectAndDecodeMulti(scaled_image)
+            print(decoded_info)
+            if retval:
+                qr_codes.extend(decoded_info)
+
+    pdf_document.close()
+
+    return qr_codes
+
+def process_pdf_files_in_folder(folder_path):
+    folder_path = os.path.abspath(folder_path)
+
+    for file_name in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file_name)
+
+        if os.path.isfile(file_path) and file_name.endswith('.pdf'):
+            qr_codes = extract_qr_codes_from_pdf(file_path)
+        
+            print(len(qr_codes))
+            for qr_code in qr_codes:
+                print(f'Código QR encontrado en {file_name}: {qr_code}')
+
+# Carpeta que contiene los archivos PDF
+input_folder = "../invoice_upload"
+
+# Procesa archivos PDF en la carpeta
+process_pdf_files_in_folder(input_folder)
+
+def find_and_decode_qr_codes():
+    for img_file in os.listdir(folder_path):
+        img_path = os.path.join(folder_path, img_file)
+        #img = Image.open(img_path)
+        img = cv2.imread(img_path)
+        det = cv2.QRCodeDetector()
+        valorQRLeido, box_coordinates, st_code = det.detectAndDecode(img)
+        if box_coordinates is  None:
+            print("no hay codigo qr en la imagen")
+               
+        else:
+            print("El valor del QR leído es: ", valorQRLeido)
+    for img_file in os.listdir(image_folder):
+        img_path = os.path.join(image_folder, img_file)
+        os.remove(img_path)
+        qr_codes = []
     return qr_codes
 
 folder_path = "../invoice_upload"
 # Define la función para leer datos desde un archivo Excel
-for filename in os.listdir(folder_path):
-    if filename.endswith(".pdf"):
-        pdf_path = os.path.join(folder_path, filename)
-        print("Procesando factura:", pdf_path)
-        
-        # Extraer imágenes del PDF
-        images = extract_images_from_pdf(pdf_path)
-
-        # Buscar y decodificar códigos QR
-        qr_codes = find_and_decode_qr_codes(images)
-
-        # Imprimir los datos de los códigos QR encontrados
-        for qr_code in qr_codes:
-            print("Código QR encontrado en", pdf_path, ":", qr_code)
 
 
-class InvoiceBot:
-    pass
-    #def __init__(self, username, password):
-        #self.username = username
-        #self.password = password
-        #     # Establece la ubicación del ejecutable de ChromeDriver
-        #chromedriver_path = './chromedriver.exe'
-#
-        ## Configura el servicio de ChromeDriver
-        #chrome_service = webdriver.chrome.service.Service(executable_path=chromedriver_path)
-#
-        ## Inicializa el controlador de Chrome
-        #self.driver = webdriver.Chrome(service=chrome_service)
-        #self.driver.maximize_window()
-#
-    #def login(self):
-    #    self.driver.get("https://www.instagram.com/")
-    #    time.sleep(2)
-    #    print("Sign in ")
-    #    username_input = self.driver.find_element(By.NAME, "username")
-    #    username_input.send_keys(self.username)
-#
-    #    password_input = self.driver.find_element(By.NAME, "password")
-    #    password_input.send_keys(self.password)
-#
-    #    password_input.send_keys(Keys.ENTER)
-    #    time.sleep(4)
-    #    print("Sign in successfully!!")
-    #def extract_followers(self, profile):
-    #    self.driver.get(f"https://www.instagram.com/{profile}/followers")
-    #    time.sleep(randint(2,4))
-    #    followers_a = self.driver.find_elements(By.XPATH, '//div[@class="xt0psk2"]/div/a')
-    #    followers=[follower.text for follower in followers_a]
-    #    
-    #    return followers
-    
-    
-    #def interact_with_users(self, profile):
-    #    time.sleep(randint(2,4))
-    #    try:
-    #        self.driver.get(f"https://www.instagram.com/{profile}")
-    #        time.sleep(randint(2,4))
-    #        self.like_story()
-    #        time.sleep(randint(2,4))
-    #        posts = self.driver.find_elements(By.XPATH, '//div[@class="_ac7v  _al3n"][1]/div/a')
-    #        links = [post.get_attribute('href') for post in posts]
-    #        for link in links:
-    #            self.driver.get(link)
-    #            try:
-    #                like_post = self.driver.find_element(By.XPATH, '//div[@class="x6s0dn4 x78zum5 xdt5ytf xl56j7k"]/span')
-    #                like_post.click()
-    #            except:
-    #                pass
-    #    except:
-    #        pass
-    
-
-    #def like_story(self):
-    #    time.sleep(randint(2,4))
-    #    try:
-    #        story = self.driver.find_element(By.XPATH, '//div[@class="_aarf _aarg"]/span')
-    #        story.click()
-    #        time.sleep(2)
-    #        like_button = self.driver.find_element(By.XPATH, '//div[@class="_abx4"]/span')
-    #        like_button.click()
-    #        time.sleep(2)
-    #        close_btn = self.driver.find_element(By.XPATH, '//div[@class="xjbqb8w x1ypdohk xw7yly9 xktsk01 x1yztbdb x1d52u69 x10l6tqk x13vifvy xds687c"]/div/div')
-    #        close_btn.click()
-    #    except:
-    #        pass
-#
-    #def run_bot(self, profile_list,histories,data_route):
-    #    pass
-    #    #iteraction = [self.interact_with_users(user) for user in users]
-    #    self.driver.quit()
-
-#Customizable Area
-username = "cocina_facil5"  # Write your username here
-password = "Salchipapa19"    # Write your password here
-  # In this file, the script saves the last history from the user
-
-
-#bot = InvoiceBot(username, password)
-#bot.login()  # Llama al método de inicio de sesión antes de ejecutar el bot
-#bot.run_bot()
-
-#Okey, u need.
-#and install selenium, but first install python, ok installed, run the script
