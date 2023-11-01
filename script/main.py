@@ -1,19 +1,34 @@
 import subprocess
 import time
 from random import randint
-from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
+from selenium_recaptcha_solver import RecaptchaSolver
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import requests
 import os
 from pdf2image import convert_from_path
 import cv2
 import aspose.barcode as barcode
 import json
 import re
+import datetime
 poppler_path = "../poppler/bin"
 pdf_folder = "../invoice_upload"
 image_folder = "../invoice_images"
+route_txt = '../Not processed/log.txt'
+username = "auxfacturacion@ayura.co" 
+password = "4Kqx/v&$nv7W+7#"
+
+
+options = Options()
+options.add_argument('--no-sandbox')
+options.add_argument("--disable-extensions")
+
 list_facturas=[]
+today=datetime.datetime.now()
 def generate_pdf_to_image():
     os.makedirs(image_folder, exist_ok=True)
 
@@ -128,6 +143,10 @@ def find_and_decode_qr_codes():
                             
                         break
                 else:
+                    new_data=f"el archivo{img_file} no fue procesado con exito ya que tiene un QR no legible el dia {today}"
+                    with open(route_txt, "a") as archivo:
+                        print("write in file")
+                        archivo.write(new_data + "\n")
                     print(f"no se encontro QR para {img_file}")
                     print("----------------------------")
             
@@ -143,7 +162,49 @@ generate_pdf_to_image()
 find_and_decode_qr_codes()
 data={}
 list_2=[]
-print("los resultados obtenidos son : ")
-print("-------------------------------------")
-print(list_facturas)
 
+
+
+class FacturasBot:
+    print("comienza proceso de facturas")
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+             
+        chromedriver_path = '../chromedriver.exe'
+
+        # Configura el servicio de ChromeDriver
+        chrome_service = webdriver.chrome.service.Service(executable_path=chromedriver_path)
+
+        # Inicializa el controlador de Chrome
+        self.driver = webdriver.Chrome(service=chrome_service)
+        self.driver.maximize_window()
+        
+        
+
+    def login(self):
+        self.driver.get("https://cenf.cen.biz/site/")
+        time.sleep(4)
+        print("Sign in ")
+        username_input = self.driver.find_element(By.NAME, "username")
+        username_input.send_keys(self.username)
+
+        password_input = self.driver.find_element(By.NAME, "password")
+        password_input.send_keys(self.password)
+        
+        #self.driver.switch_to.frame(0)
+        time.sleep(1)
+        recaptcha_iframe = self.driver.find_element(By.XPATH, '//*[@id="captcha_paragraph"]/div/div/div/iframe')
+        time.sleep(2)
+        solver = RecaptchaSolver(driver=self.driver)
+        solver.click_recaptcha_v2(iframe=recaptcha_iframe)
+        
+        time.sleep(4)
+        self.driver.switch_to.default_content()
+        password_input.send_keys(Keys.ENTER)
+        
+        print("Sign in successfully!!")
+
+
+bot = FacturasBot(username, password)
+bot.login()        
