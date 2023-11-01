@@ -1,3 +1,4 @@
+# -----------------------------imports ------------------------------
 import subprocess
 import time
 from random import randint
@@ -15,20 +16,27 @@ import aspose.barcode as barcode
 import json
 import re
 import datetime
-poppler_path = "../poppler/bin"
-pdf_folder = "../invoice_upload"
-image_folder = "../invoice_images"
-route_txt = '../Not processed/log.txt'
-username = "auxfacturacion@ayura.co" 
-password = "4Kqx/v&$nv7W+7#"
+# --------------------------imports ---------------------------------
+
+#--------------------customizable area -----------------------------
+poppler_path = "../poppler/bin"                                     #
+pdf_folder = "../invoice_upload"                                    #
+image_folder = "../invoice_images"                                  #
+route_txt = '../Not processed/log.txt'                              #
+username = "auxfacturacion@ayura.co"                                #
+password = "4Kqx/v&$nv7W+7#"                                        #
+#--------------------customizable area -----------------------------
+
+#------------------- options chrome driver -------------------------
+options = Options()                                                 #
+options.add_argument('--no-sandbox')                                #
+options.add_argument("--disable-extensions")                        #
+list_facturas=[]                                                    #
+today=datetime.datetime.now()                                       #
+# -------------------options chrome driver -------------------------
 
 
-options = Options()
-options.add_argument('--no-sandbox')
-options.add_argument("--disable-extensions")
-
-list_facturas=[]
-today=datetime.datetime.now()
+#-------------------- function generate pdf to image -----------------------
 def generate_pdf_to_image():
     os.makedirs(image_folder, exist_ok=True)
 
@@ -43,8 +51,9 @@ def generate_pdf_to_image():
                 image.save(image_path, "PNG")
 
     print("PDFs convertidos en imágenes")
-
-
+#-------------------end function ----------------------------------------------
+    
+# ------------------function decode qr -----------------------------------------
 def find_and_decode_qr_codes():
     for img_file in os.listdir(image_folder):
         
@@ -157,14 +166,11 @@ def find_and_decode_qr_codes():
     return qr_codes
 
 
-
-generate_pdf_to_image()
-find_and_decode_qr_codes()
-data={}
-list_2=[]
+#---------------------------------- end function ----------------------------------------------------------------------------
 
 
 
+# ---------------------------------main class ------------------------------------------------------------------------------
 class FacturasBot:
     print("comienza proceso de facturas")
     def __init__(self, username, password):
@@ -181,7 +187,7 @@ class FacturasBot:
         self.driver.maximize_window()
         
         
-
+#-------------------------- function login and resolve captcha -------------------
     def login(self):
         self.driver.get("https://cenf.cen.biz/site/")
         time.sleep(4)
@@ -204,7 +210,12 @@ class FacturasBot:
         password_input.send_keys(Keys.ENTER)
         
         print("Sign in successfully!!")
+# -------------------------end function ---------------------------------------------
+#--------------------------end class ------------------------------------------------
 
-
-bot = FacturasBot(username, password)
-bot.login()        
+#--------------------- call class and function area ---------------------------------
+generate_pdf_to_image()                                                             #
+find_and_decode_qr_codes()                                                          #
+bot = FacturasBot(username, password)                                               #
+bot.login()                                                                         #
+#---------------------call class and function area ----------------------------------
