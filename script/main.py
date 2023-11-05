@@ -28,9 +28,11 @@ password = "4Kqx/v&$nv7W+7#"                                        #
 #--------------------customizable area -----------------------------
 
 #------------------- options chrome driver -------------------------
-options = Options()                                                 #
+extension_path = '../extension/buster_captcha_resolver.crx'
+options = webdriver.ChromeOptions()
+options.add_extension(extension_path)#
 options.add_argument('--no-sandbox')                                #
-options.add_argument("--disable-extensions")                        #
+options.add_argument("--enable-extensions")                        #
 list_facturas=[]                                                    #
 today=datetime.datetime.now()                                       #
 # -------------------options chrome driver -------------------------
@@ -180,12 +182,11 @@ class FacturasBot:
         chromedriver_path = '../chromedriver.exe'
 
         # Configura el servicio de ChromeDriver
-        chrome_service = webdriver.chrome.service.Service(executable_path=chromedriver_path)
+        chrome_service = webdriver.chrome.service.Service(executable_path=chromedriver_path,chrome_options=options)
 
         # Inicializa el controlador de Chrome
         self.driver = webdriver.Chrome(service=chrome_service)
         self.driver.maximize_window()
-        
         
 #-------------------------- function login and resolve captcha -------------------
     def login(self):
