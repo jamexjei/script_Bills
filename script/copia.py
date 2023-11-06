@@ -1,53 +1,57 @@
-import os
 import fitz  # PyMuPDF
 import qrcode
+from PIL import Image
+import tempfile
+import os
 
-# Carpeta que contiene los archivos PDF
-pdf_folder = './invoice_upload'
+# Ruta al archivo PDF
+pdf_file = './invoice_upload/Document_20230411_0001.pdf'
 
 # Lee el contenido de una página del PDF
-def extract_text_from_pdf(pdf_path, page_num):
+def extract_text_from_page(pdf_path, page_num):
     doc = fitz.open(pdf_path)
-    page = doc[page_num]
-    text = page.get_text()
-    return text
+    if page_num < doc.page_count:
+        page = doc[page_num]
+        text = page.get_text()
+        return text
 
-# Genera un código QR y guarda la imagen
-def generate_qr_code(pdf_content, output_path):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(pdf_content)
-    qr.make(fit=True)
+# Genera el código QR para una página específica y guarda la imagen
+def generate_qr_for_page(pdf_path, page_num):
+    text = extract_text_from_page(pdf_path, page_num)
+    if text:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(text)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        return qr_img
 
-    qr_img = qr.make_image(fill_color="black", back_color="white")
-    qr_img.save(output_path)
+# Guarda la imagen del código QR para cada página en archivos temporales
+def save_qr_images_for_all_pages(pdf_path):
+    doc = fitz.open(pdf_path)
+    qr_images = []
+    for page_num in range(doc.page_count):
+        qr_img = generate_qr_for_page(pdf_path, page_num)
+        if qr_img:
+            # Crear un archivo temporal para la imagen del código QR
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+                qr_img.save(temp_file.name)
+                qr_images.append(temp_file.name)
+    return qr_images
 
-# Procesa todos los archivos PDF en la carpeta
-for root, dirs, files in os.walk(pdf_folder):
-    for file in files:
-        if file.lower().endswith('.pdf'):
-            pdf_path = os.path.join(root, file)
+# Llama a la función para generar y guardar códigos QR por página
+qr_image_files = save_qr_images_for_all_pages(pdf_file)
 
-            pdf_reader = fitz.open(pdf_path)
+# Ahora puedes procesar cada página y su código QR correspondiente
+for page_num, qr_image_file in enumerate(qr_image_files):
+    print(f"Procesando página {page_num + 1} y su código QR:")
+    text = extract_text_from_page(pdf_file, page_num)
+    print(f"Contenido de la página:\n{text}")
+    print(f"Ruta del archivo del código QR: {qr_image_file}")
+    print("\n" + "-" * 50 + "\n")
 
-            for page_num in range(pdf_reader.page_count):
-                pdf_content = extract_text_from_pdf(pdf_path, page_num)
-                print(f"Contenido de la página {page_num + 1} en '{pdf_path}':\n")
-                print(pdf_content)
-                print("\n" + "-" * 50 + "\n")
-
-                # Genera un código QR para cada página y guarda la imagen
-                qr_code_output = os.path.splitext(pdf_path)[0] + f'_page_{page_num + 1}_qr.png'
-                generate_qr_code(pdf_content, qr_code_output)
-
-                # Crear un PDF temporal para esta página
-                temp_pdf = fitz.open()
-                temp_pdf.insert_pdf(pdf_reader, from_page=page_num, to_page=page_num)
-                temp_pdf_output = os.path.splitext(pdf_path)[0] + f'_page_{page_num + 1}.pdf'
-                temp_pdf.save(temp_pdf_output)
-
-print("Proceso completado.")
+# Limpia los archivos temporales de los códigos QR
