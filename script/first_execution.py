@@ -3,8 +3,8 @@ import time
 comando = "pip install PyMuPDF"
 comando1 = "pip install pyzbar"
 comando5="pip install Pillow"
-comando6="pip install PyMuPDF qrcode opencv-python"
-comando7="pip install selenium-2captcha-solver"
+comando6="pip install pyzbar"
+comando7="pip install pytesseract"
 
 try:
     subprocess.call(comando, shell=True)

@@ -5,7 +5,6 @@ from random import randint
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
-from selenium_recaptcha_solver import RecaptchaSolver
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import requests
@@ -27,16 +26,7 @@ username = "auxfacturacion@ayura.co"                                #
 password = "4Kqx/v&$nv7W+7#"                                        #
 #--------------------customizable area -----------------------------
 
-#------------------- options chrome driver -------------------------
-extension_path = '../extension/buster_captcha_resolver.crx'
-options = webdriver.ChromeOptions()
-options.add_extension(extension_path)#
-options.add_argument('--no-sandbox')                                #
-options.add_argument("--enable-extensions")                        #
-list_facturas=[]                                                    #
-today=datetime.datetime.now()                                       #
-# -------------------options chrome driver -------------------------
-
+list_facturas=[]
 
 #-------------------- function generate pdf to image -----------------------
 def generate_pdf_to_image():
@@ -71,7 +61,7 @@ def find_and_decode_qr_codes():
         print(f"procesando--> {img_file} ")
         print(f"decodificando QR... {img_file}")
         
-        x, y = 3, 3
+        x, y = 2, 2
         sw=0
         img_path = os.path.join(image_folder, img_file)
         img = cv2.imread(img_path)
@@ -79,7 +69,7 @@ def find_and_decode_qr_codes():
         loading=f" loading {percentage}%"
         data={}
         itera=''
-        while x < 7 and y < 7:
+        while x < 10 and y < 10:
             
             scaled_image = cv2.resize(img, None, fx=x, fy=y, interpolation=cv2.INTER_CUBIC)
             retval, decoded_info, points, straight_qrcode = det.detectAndDecodeMulti(scaled_image)
@@ -92,27 +82,14 @@ def find_and_decode_qr_codes():
                 lineas = itera.strip().split('\n')
 
 
-                data = {}
+                list_facturas.append(decoded_info)
 
-
-                for linea in lineas:
-                    if ':' in linea:
-                        clave, valor = re.split(r':', linea, maxsplit=1)
-                        data[clave] = valor
-                    else:
-        
-                        data["URL"] = linea
-
-
-                json_data = json.dumps(data, indent=4)
-                list_facturas.append(json_data)
-
-                x=1
-                y=1
+                x=2
+                y=2
                 break
 
-            x += 3
-            y += 3
+            x += 2
+            y += 2
             
             
             
@@ -122,7 +99,7 @@ def find_and_decode_qr_codes():
             if len(data)>0 and data[0]!='':
                 print(f"Código QR encontrado en {img_file} ")
                 print("----------------------------")
-                print(data)
+                list_facturas.append(data[0])
             else:
                 print("usando metodo 3 de deteccion")
                 reader = barcode.barcoderecognition.BarCodeReader(img_path)
@@ -135,22 +112,8 @@ def find_and_decode_qr_codes():
                     print("----------------------------")
                     for x in recognized_results:
                         if x.code_text !='':
-                            lineas = x.code_text.strip().split('\n')
-
-                            data = {}
-
-
-                            for linea in lineas:
-                                if ':' in linea:
-                                    clave, valor = re.split(r':', linea, maxsplit=1)
-                                    data[clave] = valor
-      
-                                    data["URL"] = linea
-
-
-                            json_data = json.dumps(data, indent=4)
-
-                            list_facturas.append(json_data)
+           
+                            list_facturas.append(x.code_text)
                             
                         break
                 else:
@@ -171,52 +134,45 @@ def find_and_decode_qr_codes():
 #---------------------------------- end function ----------------------------------------------------------------------------
 
 
-
-# ---------------------------------main class ------------------------------------------------------------------------------
-class FacturasBot:
-    print("comienza proceso de facturas")
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-             
-        chromedriver_path = '../chromedriver.exe'
-
-        # Configura el servicio de ChromeDriver
-        chrome_service = webdriver.chrome.service.Service(executable_path=chromedriver_path,chrome_options=options)
-
-        # Inicializa el controlador de Chrome
-        self.driver = webdriver.Chrome(service=chrome_service)
-        self.driver.maximize_window()
-        
-#-------------------------- function login and resolve captcha -------------------
-    def login(self):
-        self.driver.get("https://cenf.cen.biz/site/")
-        time.sleep(4)
-        print("Sign in ")
-        username_input = self.driver.find_element(By.NAME, "username")
-        username_input.send_keys(self.username)
-
-        password_input = self.driver.find_element(By.NAME, "password")
-        password_input.send_keys(self.password)
-        
-        #self.driver.switch_to.frame(0)
-        time.sleep(1)
-        recaptcha_iframe = self.driver.find_element(By.XPATH, '//*[@id="captcha_paragraph"]/div/div/div/iframe')
-        time.sleep(2)
-        solver = RecaptchaSolver(driver=self.driver)
-        solver.click_recaptcha_v2(iframe=recaptcha_iframe)
-        
-        time.sleep(4)
-        self.driver.switch_to.default_content()
-        password_input.send_keys(Keys.ENTER)
-        
-        print("Sign in successfully!!")
 # -------------------------end function ---------------------------------------------
 #--------------------------end class ------------------------------------------------
 
 #--------------------- call class and function area ---------------------------------
 generate_pdf_to_image()                                                             #
 find_and_decode_qr_codes()                                                          #
-bot = FacturasBot(username, password)                                               #
-bot.login()                                                                         #
+result = []
+
+def extract_num_fac_nit_fac(text):
+    num_fac = None
+    nit_fac = None
+    lines = text.split('\n')
+    for line in lines:
+        if 'NumFac:' in line:
+            num_fac = line.split('NumFac:')[1].strip()
+        if 'NitFac:' in line:
+            nit_fac = line.split('NitFac:')[1].strip()
+    
+    if num_fac and nit_fac:
+        return {'NumFac': num_fac, 'NitFac': nit_fac}
+    elif num_fac:
+        return {'NumFac': num_fac, 'NitFac': None}
+    elif nit_fac:
+        return {'NumFac': None, 'NitFac': nit_fac}
+    else:
+        return None
+
+for item in list_facturas:
+    if isinstance(item, (str, tuple, list)):
+        if isinstance(item, (list, tuple)):
+            for sub_item in item:
+                if isinstance(sub_item, str):
+                    result_item = extract_num_fac_nit_fac(sub_item)
+                    if result_item:
+                        result.append(result_item)
+        elif isinstance(item, str):
+            result_item = extract_num_fac_nit_fac(item)
+            if result_item:
+                result.append(result_item)
+
+print(result)
 #---------------------call class and function area ----------------------------------
