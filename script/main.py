@@ -15,6 +15,7 @@ import aspose.barcode as barcode
 import json
 import re
 import datetime
+from datetime import datetime
 # --------------------------imports ---------------------------------
 
 #--------------------customizable area -----------------------------
@@ -27,7 +28,7 @@ password = "4Kqx/v&$nv7W+7#"                                        #
 #--------------------customizable area -----------------------------
 
 list_facturas=[]
-
+today=datetime.now()
 #-------------------- function generate pdf to image -----------------------
 def generate_pdf_to_image():
     os.makedirs(image_folder, exist_ok=True)
@@ -112,7 +113,7 @@ def find_and_decode_qr_codes():
                     print("----------------------------")
                     for x in recognized_results:
                         if x.code_text !='':
-           
+                           
                             list_facturas.append(x.code_text)
                             
                         break
@@ -145,19 +146,25 @@ result = []
 def extract_num_fac_nit_fac(text):
     num_fac = None
     nit_fac = None
+    fec_fac=None
     lines = text.split('\n')
     for line in lines:
         if 'NumFac:' in line:
             num_fac = line.split('NumFac:')[1].strip()
         if 'NitFac:' in line:
             nit_fac = line.split('NitFac:')[1].strip()
+        if 'FecFac' in line:
+            fec_fac = line.split('FecFac:')[1].strip()
+            
     
-    if num_fac and nit_fac:
-        return {'NumFac': num_fac, 'NitFac': nit_fac}
+    if num_fac and nit_fac and fec_fac:
+        return {'NumFac': num_fac, 'NitFac': nit_fac,'FecFac':fec_fac}
     elif num_fac:
-        return {'NumFac': num_fac, 'NitFac': None}
+        return {'NumFac': num_fac, 'NitFac': None,'FecFac':None}
     elif nit_fac:
-        return {'NumFac': None, 'NitFac': nit_fac}
+        return {'NumFac': None, 'NitFac': nit_fac,'FecFac':None}
+    elif fec_fac:
+        return {'NumFac': None, 'NitFac': None,'FecFac':fec_fac}
     else:
         return None
 
@@ -173,6 +180,6 @@ for item in list_facturas:
             result_item = extract_num_fac_nit_fac(item)
             if result_item:
                 result.append(result_item)
-
+print(list_facturas)
 print(result)
 #---------------------call class and function area ----------------------------------
