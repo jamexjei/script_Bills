@@ -163,8 +163,6 @@ def extract_num_fac_nit_fac(text):
         return {'NumFac': num_fac, 'NitFac': None,'FecFac':None}
     elif nit_fac:
         return {'NumFac': None, 'NitFac': nit_fac,'FecFac':None}
-    elif fec_fac:
-        return {'NumFac': None, 'NitFac': None,'FecFac':fec_fac}
     else:
         return None
 
@@ -180,6 +178,52 @@ for item in list_facturas:
             result_item = extract_num_fac_nit_fac(item)
             if result_item:
                 result.append(result_item)
-print(list_facturas)
+
+
+
+
+def convertir_a_formato_correcto(fecha_str):
+    try:
+        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d')
+        return fecha_obj.strftime('%Y-%m-%d')
+    except ValueError:
+        try:
+            fecha_obj = datetime.strptime(fecha_str, '%Y%m%d')
+            return fecha_obj.strftime('%Y-%m-%d')
+        except ValueError:
+            print(f"Error: La fecha {fecha_str} no tiene el formato esperado (YYYY-MM-DD o YYYYMMDD)")
+            return None
+
+def encontrar_fechas_mayor_y_menor(diccionarios):
+    fechas = [diccionario['FecFac'] for diccionario in diccionarios]
+
+    fechas_obj = []
+    for fecha in fechas:
+        fecha_convertida = convertir_a_formato_correcto(fecha)
+        if fecha_convertida:
+            fechas_obj.append(datetime.strptime(fecha_convertida, '%Y-%m-%d'))
+
+    if not fechas_obj:
+        print("No hay fechas válidas en la lista.")
+        return None, None
+
+    fecha_mayor = max(fechas_obj).strftime('%Y-%m-%d')
+    fecha_menor = min(fechas_obj).strftime('%Y-%m-%d')
+
+    return fecha_mayor, fecha_menor
+
+
+
+# Encontrar fecha mayor y fecha menor
+fecha_mayor, fecha_menor = encontrar_fechas_mayor_y_menor(result)
+
+# Mostrar resultados
+if fecha_mayor is not None and fecha_menor is not None:
+    print(f"Fecha mayor: {fecha_mayor}")
+    print(f"Fecha menor: {fecha_menor}")
+
+result.append({'fecha_mayor':fecha_mayor})
+result.append({'fecha_menor':fecha_menor})
 print(result)
 #---------------------call class and function area ----------------------------------
+
