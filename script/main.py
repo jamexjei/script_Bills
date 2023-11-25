@@ -15,7 +15,7 @@ import aspose.barcode as barcode
 import json
 import re
 import datetime
-from datetime import datetime
+from datetime import datetime,timedelta
 # --------------------------imports ---------------------------------
 
 #--------------------customizable area -----------------------------
@@ -218,12 +218,21 @@ def encontrar_fechas_mayor_y_menor(diccionarios):
 fecha_mayor, fecha_menor = encontrar_fechas_mayor_y_menor(result)
 
 # Mostrar resultados
-if fecha_mayor is not None and fecha_menor is not None:
-    print(f"Fecha mayor: {fecha_mayor}")
-    print(f"Fecha menor: {fecha_menor}")
 
-result.append({'fecha_mayor':fecha_mayor})
-result.append({'fecha_menor':fecha_menor})
+
+
+def obtener_rango_mes(fecha):
+    fecha_datetime = datetime.strptime(fecha, '%Y-%m-%d')
+    primer_dia_mes = fecha_datetime.replace(day=1)
+    ultimo_dia_mes = (primer_dia_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    return primer_dia_mes.strftime('%Y/%m/%d'), ultimo_dia_mes.strftime('%Y/%m/%d')
+
+# Procesar la lista de diccionarios
+for item in result:
+    if 'FecFac' in item:
+        fecha_inicial, fecha_final = obtener_rango_mes(item['FecFac'])
+        item['fecha_ini'] = fecha_inicial
+        item['fecha_fin'] = fecha_final
 print(result)
 #---------------------call class and function area ----------------------------------
 
