@@ -22,20 +22,7 @@ nombre_zip = 'not_procesed.zip'
 smtp_server = 'smtp.gmail.com'
 smtp_port = 587
 
-def eliminar_imagenes():
-    try:
-        for img_file in os.listdir(ruta_image):
-            img_path = os.path.join(ruta_image, img_file)
-            os.remove(img_path)
-    except:
-        print(f"Error al eliminar el archivo ZIP: {str(e)}")
-        
-# Función para eliminar el archivo ZIP al finalizar el script
-def eliminar_archivo_zip():
-    try:
-        os.remove(ruta_zip)
-    except Exception as e:
-        print(f"Error al eliminar el archivo ZIP: {str(e)}")
+
 
 # Ruta de destino para el archivo ZIP
 ruta_zip = '../invoice_images/' + nombre_zip
@@ -84,7 +71,17 @@ try:
 except Exception as e:
     print(f"Error al cerrar el archivo ZIP: {str(e)}")
 
+def eliminar_imagenes_y_zip():
+    try:
+        for img_file in os.listdir(ruta_image):
+            img_path = os.path.join(ruta_image, img_file)
+            os.remove(img_path)
+        os.remove(ruta_zip)
+    except Exception as e:
+        print(f"Error al eliminar las imágenes y el archivo ZIP: {str(e)}")
+
+# Registrar la función para eliminar las imágenes y el archivo ZIP al finalizar el script
+atexit.register(eliminar_imagenes_y_zip)
+    
+
 sys.exit()
-# Registrar la función para eliminar el archivo ZIP al finalizar el script
-atexit.register(eliminar_archivo_zip)
-atexit.register(eliminar_imagenes)
