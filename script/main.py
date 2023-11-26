@@ -28,6 +28,7 @@ password = "4Kqx/v&$nv7W+7#"                                        #
 #--------------------customizable area -----------------------------
 
 list_facturas=[]
+list_images_send_email=[]
 today=datetime.now()
 #-------------------- function generate pdf to image -----------------------
 def generate_pdf_to_image():
@@ -119,6 +120,7 @@ def find_and_decode_qr_codes():
                         break
                 else:
                     new_data=f"el archivo{img_file} no fue procesado con exito ya que tiene un QR no legible el dia {today}"
+                    list_images_send_email.append(img_file)
                     with open(route_txt, "a") as archivo:
                         print("write in file")
                         archivo.write(new_data + "\n")
@@ -127,7 +129,8 @@ def find_and_decode_qr_codes():
             
     for img_file in os.listdir(image_folder):
         img_path = os.path.join(image_folder, img_file)
-        os.remove(img_path)
+        if img_file not in list_images_send_email:
+            os.remove(img_path)
         qr_codes = []
     return qr_codes
 

@@ -7,7 +7,29 @@ from email.mime.base import MIMEBase
 from email import encoders
 import time
 import atexit
+import sys
+from datetime import datetime
 
+
+today=datetime.now()
+# Ruta de las imágenes
+ruta_image = '../invoice_images'
+
+# Nombre del archivo ZIP
+nombre_zip = 'not_procesed.zip'
+
+# Configuración del servidor SMTP de Gmail
+smtp_server = 'smtp.gmail.com'
+smtp_port = 587
+
+def eliminar_imagenes():
+    try:
+        for img_file in os.listdir(ruta_image):
+            img_path = os.path.join(ruta_image, img_file)
+            os.remove(img_path)
+    except:
+        print(f"Error al eliminar el archivo ZIP: {str(e)}")
+        
 # Función para eliminar el archivo ZIP al finalizar el script
 def eliminar_archivo_zip():
     try:
@@ -15,18 +37,8 @@ def eliminar_archivo_zip():
     except Exception as e:
         print(f"Error al eliminar el archivo ZIP: {str(e)}")
 
-# Configuración del servidor SMTP de Gmail
-smtp_server = 'smtp.gmail.com'
-smtp_port = 587
-
-# Ruta de las imágenes
-ruta_image = '../imagenes'
-
-# Nombre del archivo ZIP
-nombre_zip = 'imagenes.zip'
-
 # Ruta de destino para el archivo ZIP
-ruta_zip = '../invoice_upload/' + nombre_zip
+ruta_zip = '../invoice_images/' + nombre_zip
 
 # Lista de archivos en la carpeta de imágenes
 archivos = [os.path.join(ruta_image, archivo) for archivo in os.listdir(ruta_image) if os.path.isfile(os.path.join(ruta_image, archivo))]
@@ -39,9 +51,9 @@ with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
 # Configuración del correo electrónico
 from_email = 'notificacionesayura@gmail.com'
 password = 'nuua ucsk mpib gilv'  # Usa tu contraseña o contraseña específica de la aplicación
-to_email = 'jamexjei@gmail.com'
-subject = 'Imágenes comprimidas'
-message = 'Adjunto encontrarás las imágenes comprimidas.'
+to_email = 'jamexjei@gmail.com' #correo destino 
+subject = f'INVOICE NOT PROCESED {today}' #asunto
+message = 'a continuacion encontramos las facturas no procesadas '#mensaje
 
 msg = MIMEMultipart()
 msg['From'] = from_email
@@ -72,5 +84,7 @@ try:
 except Exception as e:
     print(f"Error al cerrar el archivo ZIP: {str(e)}")
 
+sys.exit()
 # Registrar la función para eliminar el archivo ZIP al finalizar el script
 atexit.register(eliminar_archivo_zip)
+atexit.register(eliminar_imagenes)
