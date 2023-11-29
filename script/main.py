@@ -191,6 +191,8 @@ def convertir_a_formato_correcto(fecha_str):
         return fecha_obj.strftime('%Y-%m-%d')
     except ValueError:
         try:
+            if len(fecha_str)>10:
+                fecha_str=fecha_str[0:8]
             fecha_obj = datetime.strptime(fecha_str, '%Y%m%d')
             return fecha_obj.strftime('%Y-%m-%d')
         except ValueError:
@@ -202,6 +204,8 @@ def encontrar_fechas_mayor_y_menor(diccionarios):
 
     fechas_obj = []
     for fecha in fechas:
+        if len(fecha)>10:
+            fecha=fecha[0:8]
         fecha_convertida = convertir_a_formato_correcto(fecha)
         if fecha_convertida:
             fechas_obj.append(datetime.strptime(fecha_convertida, '%Y-%m-%d'))
@@ -216,7 +220,7 @@ def encontrar_fechas_mayor_y_menor(diccionarios):
     return fecha_mayor, fecha_menor
 
 
-
+print(result)
 # Encontrar fecha mayor y fecha menor
 fecha_mayor, fecha_menor = encontrar_fechas_mayor_y_menor(result)
 
@@ -225,7 +229,16 @@ fecha_mayor, fecha_menor = encontrar_fechas_mayor_y_menor(result)
 
 
 def obtener_rango_mes(fecha):
-    fecha_datetime = datetime.strptime(fecha, '%Y-%m-%d')
+    if len(fecha) == 14:
+        # Date format 'YYYYmmddHHMMSS'
+        fecha_datetime = datetime.strptime(fecha, '%Y%m%d%H%M%S')
+    elif len(fecha) == 10:
+        # Date format 'YYYY-mm-dd'
+        fecha_datetime = datetime.strptime(fecha, '%Y-%m-%d')
+    else:
+        print(f"Error: La fecha {fecha} no tiene un formato válido.")
+        return None, None
+    
     primer_dia_mes = fecha_datetime.replace(day=1)
     ultimo_dia_mes = (primer_dia_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
     return primer_dia_mes.strftime('%Y/%m/%d'), ultimo_dia_mes.strftime('%Y/%m/%d')
@@ -234,8 +247,9 @@ def obtener_rango_mes(fecha):
 for item in result:
     if 'FecFac' in item:
         fecha_inicial, fecha_final = obtener_rango_mes(item['FecFac'])
-        item['fecha_ini'] = fecha_inicial
-        item['fecha_fin'] = fecha_final
+        if fecha_inicial and fecha_final:
+            item['fecha_ini'] = fecha_inicial
+            item['fecha_fin'] = fecha_final
 print(result)
 #---------------------call class and function area ----------------------------------
 
